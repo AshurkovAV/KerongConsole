@@ -15,6 +15,7 @@ namespace KerongConsole
         public KerongService() {
             _codesClass = new CodesClass();
         }
+
         public async void Unlock()
         {            
             using var mySocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
