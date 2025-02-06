@@ -1,8 +1,11 @@
 ﻿using KerongConsole;
-using KerongConsole.Helpers;
-using System.Net.Sockets;
+using KerongConsole.Common;
 
-KerongService kerongService = new KerongService();
+
+
+
+
+KerongService kerongService = new KerongService(ConstantKerong.IpAdress, ConstantKerong.Port);
 
 kerongService.Unlock();
 

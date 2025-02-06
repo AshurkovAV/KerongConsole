@@ -1,7 +1,7 @@
-﻿namespace KerongConsole.Helpers
+﻿namespace KerongCore.Helpers
 {
     public class CodesClass
-    {        
+    {
         /// <summary>
         /// Возвращает статусы всех ячеек
         /// </summary>
@@ -62,6 +62,33 @@
         public byte[] Unlock4()
         {
             string sourceStatus = "0x02, 0x03, 0x00, 0x61, 0x03, 0x69";
+            return sourceStatus
+              .Split(new char[] { ' ', ':', ',', ';', '\t' }, StringSplitOptions.RemoveEmptyEntries)
+              .Select(item => Convert.ToByte(item, 16))
+              .ToArray();
+        }
+
+        /// <summary>
+        /// Открыть 5 ячейку
+        /// </summary>
+        /// <returns></returns> 
+        public byte[] Unlock5()
+        {
+            string sourceStatus = "0x02, 0x04, 0x00, 0x61, 0x03, 0x6а";
+            return sourceStatus
+              .Split(new char[] { ' ', ':', ',', ';', '\t' }, StringSplitOptions.RemoveEmptyEntries)
+              .Select(item => Convert.ToByte(item, 16))
+              .ToArray();
+        }
+
+        /// <summary>
+        /// Открыть 5 ячейку
+        /// </summary>
+        /// <returns></returns> 
+        public byte[] Unlock(int cell)
+        {
+            string cellY = "0x" + Convert.ToString(cell, 16);            
+            string sourceStatus = @$"0x02, {cellY}, 0x00, 0x61, 0x03, 0x6а";
             return sourceStatus
               .Split(new char[] { ' ', ':', ',', ';', '\t' }, StringSplitOptions.RemoveEmptyEntries)
               .Select(item => Convert.ToByte(item, 16))

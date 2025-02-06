@@ -1,8 +1,8 @@
-﻿using KerongConsole.Common;
-using KerongConsole.Helpers;
+﻿using KerongCore.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,20 +12,24 @@ namespace KerongConsole
     public class KerongService
     {
         private CodesClass _codesClass;
-        public KerongService() {
+        private string _ipAdress;
+        private int _port;
+        public KerongService(string ipAdress, int port) {
             _codesClass = new CodesClass();
+            _ipAdress = ipAdress;
+            _port = port;   
         }
 
         public async void Unlock()
         {            
             using var mySocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            mySocket.Connect(ConstantKerong.IpAdress, ConstantKerong.Port);       // подключемся к удаленному серверу
+            mySocket.Connect(_ipAdress, _port);       // подключемся к удаленному серверу
 
             using var stream = new NetworkStream(mySocket); // создаем сетевой поток
             Console.WriteLine($"Локальный адрес: {stream.Socket.LocalEndPoint}");// получаем локальный адрес
-            Console.WriteLine($"Адрес сервера: {stream.Socket.RemoteEndPoint}"); // получаем адрес сервера
+            Console.WriteLine($"Адрес сервера:   {stream.Socket.RemoteEndPoint}"); // получаем адрес сервера
             stream.Write(_codesClass.Unlock1());// отправляем массив байт на сервер 
-            Console.WriteLine($"Данные отправлены на сервер {ConstantKerong.IpAdress}");
+            Console.WriteLine($"Данные отправлены на сервер {_ipAdress}");
 
             // буфер для получения данных
             var responseData = new byte[18];
