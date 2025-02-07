@@ -18,13 +18,22 @@ namespace KerongConsole
 
         public async void Unlock()
         {            
-            using var mySocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            using var mySocket = new Socket(
+                AddressFamily.InterNetwork, 
+                SocketType.Stream, 
+                ProtocolType.Tcp);
+
+
             mySocket.Connect(ConstantKerong.IpAdress, ConstantKerong.Port);       // подключемся к удаленному серверу
+
 
             using var stream = new NetworkStream(mySocket); // создаем сетевой поток
             Console.WriteLine($"Локальный адрес: {stream.Socket.LocalEndPoint}");// получаем локальный адрес
             Console.WriteLine($"Адрес сервера: {stream.Socket.RemoteEndPoint}"); // получаем адрес сервера
+
             stream.Write(_codesClass.Unlock1());// отправляем массив байт на сервер 
+            
+            
             Console.WriteLine($"Данные отправлены на сервер {ConstantKerong.IpAdress}");
 
             // буфер для получения данных

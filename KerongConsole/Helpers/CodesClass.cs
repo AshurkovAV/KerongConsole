@@ -6,7 +6,7 @@
         /// Возвращает статусы всех ячеек
         /// </summary>
         /// <returns></returns>
-        private byte[] GetStatusAll()
+        public byte[] GetStatusAll()
         {
             string sourceStatus = "0x02, 0x00, 0x00, 0x60, 0x03, 0x65";
             return sourceStatus
