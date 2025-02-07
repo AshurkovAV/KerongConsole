@@ -1,32 +1,28 @@
 ﻿using KerongCore.Helpers;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
 using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace KerongConsole
 {
-    public class KerongService
+    public class KerongService : IKerongService
     {
         private CodesClass _codesClass;
         private string _ipAdress;
         private int _port;
-        public KerongService(string ipAdress, int port) {
+        public KerongService(string ipAdress, int port)
+        {
             _codesClass = new CodesClass();
             _ipAdress = ipAdress;
-            _port = port;   
+            _port = port;
         }
 
         public void Unlock(int cell)
-        {            
+        {
             Send(_codesClass.Unlock(cell));
         }
 
         public void Status()
-        {            
+        {
             Send(_codesClass.GetStatusAll());
         }
 
@@ -51,8 +47,8 @@ namespace KerongConsole
             Console.WriteLine(test);
             mySocket.Close();
 
-            Console.WriteLine("Все сообщения отправлены");
+            Console.WriteLine("Сообщение отправлено");
         }
     }
-    
+
 }
