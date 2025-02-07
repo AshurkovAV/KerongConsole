@@ -20,15 +20,26 @@ namespace KerongConsole
             _port = port;   
         }
 
-        public async void Unlock()
+        public void Unlock(int cell)
         {            
+            Send(_codesClass.Unlock(cell));
+        }
+
+        public void Status()
+        {            
+            Send(_codesClass.GetStatusAll());
+        }
+
+        private async void Send(byte[] data)
+        {
+
             using var mySocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             mySocket.Connect(_ipAdress, _port);       // подключемся к удаленному серверу
 
             using var stream = new NetworkStream(mySocket); // создаем сетевой поток
             Console.WriteLine($"Локальный адрес: {stream.Socket.LocalEndPoint}");// получаем локальный адрес
             Console.WriteLine($"Адрес сервера:   {stream.Socket.RemoteEndPoint}"); // получаем адрес сервера
-            stream.Write(_codesClass.Unlock1());// отправляем массив байт на сервер 
+            stream.Write(data);// отправляем массив байт на сервер 
             Console.WriteLine($"Данные отправлены на сервер {_ipAdress}");
 
             // буфер для получения данных
@@ -38,8 +49,10 @@ namespace KerongConsole
             string test = string.Join(", ", responseData
               .Select(item => "0x" + item.ToString("x2")));
             Console.WriteLine(test);
+            mySocket.Close();
 
             Console.WriteLine("Все сообщения отправлены");
         }
     }
+    
 }
