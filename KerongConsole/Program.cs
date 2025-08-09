@@ -20,7 +20,14 @@ while (true) // Бесконечный цикл
     if (int.TryParse(input, out int number))
     {        
         Console.WriteLine($"Вы ввели ячейку : {input}");
-        kerongService.Unlock(Convert.ToInt32(input));
+        // kerongService.Unlock(Convert.ToInt32(input));
+        // Thread.Sleep(3000); // Пауза перед повторной попыткой
+        while (true)
+        {
+            kerongService.Status();
+            Thread.Sleep(3000); // Пауза перед повторной попыткой
+        }
+           
     }
     else
     {

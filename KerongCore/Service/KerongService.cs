@@ -21,7 +21,7 @@ namespace KerongConsole
            Send(_codesClass.Unlock(cell));
         }
 
-        public void Status()
+        public async void Status()
         {
             Send(_codesClass.GetStatusAll());
         }
@@ -31,7 +31,7 @@ namespace KerongConsole
             using var mySocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             try
             {
-                mySocket.Connect(_ipAdress, _port);       // подключемся к удаленному серверу
+                await mySocket.ConnectAsync(_ipAdress, _port);
 
                 using var stream = new NetworkStream(mySocket); // создаем сетевой поток
                 Console.WriteLine($"Локальный адрес: {stream.Socket.LocalEndPoint}");// получаем локальный адрес
@@ -39,12 +39,24 @@ namespace KerongConsole
                 await stream.WriteAsync(data, 0, data.Length); // Асинхронная отправка
                 Console.WriteLine($"Данные отправлены на сервер {_ipAdress}");
 
+
+                // Даём серверу время на обработку (если нужно)
+                await Task.Delay(100);
+
+
                 // буфер для получения данных
-                var responseData = new byte[18];
-                var bytes = await stream.ReadAsync(responseData); // получаем данные
-                                                                  // преобразуем полученные данные в строку
-                string test = string.Join(", ", responseData
-                  .Select(item => "0x" + item.ToString("x2")));                
+                var responseData = new byte[1024];
+                int bytesRead = await stream.ReadAsync(responseData, 0, responseData.Length);
+
+                if (bytesRead == 0)
+                {
+                    Console.WriteLine("Сервер закрыл соединение, не отправив данные.");
+                    return;
+                }
+
+                // Выводим только реально полученные байты
+                string test = string.Join(", ", responseData.Take(bytesRead).Select(b => "0x" + b.ToString("x2")));
+                Console.WriteLine($"Получено {bytesRead} байт: {test}");
                 //mySocket.Close();
 
             }
