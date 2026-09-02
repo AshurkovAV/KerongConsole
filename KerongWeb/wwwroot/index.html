@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Kerong Console</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #111827;
+            color: #e5e7eb;
+            margin: 0;
+            padding: 24px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .panel {
+            background: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            margin-top: 0;
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: end;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        label {
+            font-size: 12px;
+            color: #cbd5e1;
+        }
+
+        input, button {
+            border-radius: 8px;
+            border: 1px solid #475569;
+            padding: 10px 12px;
+            font-size: 14px;
+        }
+
+        input {
+            background: #0f172a;
+            color: #f8fafc;
+            min-width: 140px;
+        }
+
+        button {
+            background: #2563eb;
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        button.secondary {
+            background: #059669;
+        }
+
+        button:hover {
+            opacity: 0.95;
+        }
+
+        .status-box {
+            margin-top: 24px;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 16px;
+            white-space: pre-wrap;
+            word-break: break-word;
+            min-height: 120px;
+        }
+
+        .status-line {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .chip {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 999px;
+            font-size: 12px;
+            background: #111827;
+            border: 1px solid #334155;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="panel">
+            <h1>Kerong Controller</h1>
+            <div class="controls">
+                <div class="field">
+                    <label for="cell">Ячейка</label>
+                    <input id="cell" type="number" min="1" max="32" value="1" />
+                </div>
+                <button id="unlockBtn">Открыть замок</button>
+                <button id="statusBtn" class="secondary">Снять статус</button>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="status-line">
+                <strong>Состояние:</strong>
+                <span id="resultBadge" class="chip">Ожидание</span>
+            </div>
+            <div id="resultBox" class="status-box">Нажмите кнопку для проверки или открытия.</div>
+        </div>
+    </div>
+
+    <script>
+        const resultBox = document.getElementById('resultBox');
+        const resultBadge = document.getElementById('resultBadge');
+
+        function setResult(success, message) {
+            resultBadge.textContent = success ? 'OK' : 'ERROR';
+            resultBadge.style.borderColor = success ? '#10b981' : '#ef4444';
+            resultBadge.style.color = success ? '#a7f3d0' : '#fecaca';
+            resultBox.textContent = message;
+        }
+
+        async function fetchStatus() {
+            resultBox.textContent = 'Запрос статуса...';
+            const response = await fetch('/api/status');
+            const data = await response.json();
+
+            setResult(data.success, JSON.stringify(data, null, 2));
+        }
+
+        async function unlockCell() {
+            const cell = Number(document.getElementById('cell').value);
+            if (!Number.isInteger(cell) || cell < 1 || cell > 32) {
+                setResult(false, 'Введите номер ячейки от 1 до 32.');
+                return;
+            }
+
+            resultBox.textContent = `Открытие ячейки ${cell}...`;
+
+            const response = await fetch('/api/unlock', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cell })
+            });
+
+            const data = await response.json();
+            setResult(data.success, JSON.stringify(data, null, 2));
+        }
+
+        document.getElementById('statusBtn').addEventListener('click', fetchStatus);
+        document.getElementById('unlockBtn').addEventListener('click', unlockCell);
+    </script>
+</body>
+</html>

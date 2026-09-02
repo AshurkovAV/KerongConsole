@@ -1,70 +1,129 @@
 ﻿using KerongCore.Helpers;
 using System.Net.Sockets;
 
-
 namespace KerongConsole
 {
     public class KerongService : IKerongService
     {
-        private CodesClass _codesClass;
-        private string _ipAdress;
-        private int _port;
-        public KerongService(string ipAdress, int port)
+        private readonly CodesClass _codesClass;
+        private readonly string _ipAdress;
+        private readonly List<int> _ports;
+
+        public KerongService(string ipAdress, int port, IEnumerable<int>? ports = null)
         {
             _codesClass = new CodesClass();
             _ipAdress = ipAdress;
-            _port = port;
+            _ports = new List<int>();
+
+            foreach (var candidate in (ports ?? new[] { port }).Where(p => p > 0).Distinct())
+            {
+                if (!_ports.Contains(candidate))
+                {
+                    _ports.Add(candidate);
+                }
+            }
+
+            if (!_ports.Contains(port))
+            {
+                _ports.Insert(0, port);
+            }
         }
 
-        public async void Unlock(int cell)
+        public bool Unlock(int cell)
         {
-           Send(_codesClass.Unlock(cell));
+            return GetUnlockData(cell) != null;
         }
 
-        public async void Status()
+        public byte[]? GetUnlockData(int cell)
         {
-            Send(_codesClass.GetStatusAll());
+            return Send(_codesClass.Unlock(cell), $"unlock {cell}");
         }
 
-        private async void Send(byte[] data)
+        public bool Status()
         {
-            using var mySocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            var isOk = GetStatusData() != null;
+            if (!isOk)
+            {
+                Console.WriteLine("Проверка статуса: устройство не ответило или ответ невалиден.");
+            }
+
+            return isOk;
+        }
+
+        public byte[]? GetStatusData()
+        {
+            return Send(_codesClass.GetStatusAll(), "status");
+        }
+
+        private byte[]? Send(byte[] data, string commandName)
+        {
+            foreach (var port in _ports)
+            {
+                var response = TrySendOnPort(data, port, commandName);
+                if (response != null)
+                {
+                    return response;
+                }
+            }
+
+            return null;
+        }
+
+        private byte[]? TrySendOnPort(byte[] data, int port, string commandName)
+        {
             try
             {
-                await mySocket.ConnectAsync(_ipAdress, _port);
+                using var mySocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                mySocket.ReceiveTimeout = 2000;
+                mySocket.SendTimeout = 2000;
+                mySocket.Connect(_ipAdress, port);
 
-                using var stream = new NetworkStream(mySocket); // создаем сетевой поток
-                Console.WriteLine($"Локальный адрес: {stream.Socket.LocalEndPoint}");// получаем локальный адрес
-                Console.WriteLine($"Адрес сервера:   {stream.Socket.RemoteEndPoint}"); // получаем адрес сервера
-                await stream.WriteAsync(data, 0, data.Length); // Асинхронная отправка
-                Console.WriteLine($"Данные отправлены на сервер {_ipAdress}");
+                using var stream = new NetworkStream(mySocket);
+                stream.Write(data, 0, data.Length);
 
-
-                // Даём серверу время на обработку (если нужно)
-                await Task.Delay(100);
-
-
-                // буфер для получения данных
                 var responseData = new byte[1024];
-                int bytesRead = await stream.ReadAsync(responseData, 0, responseData.Length);
+                int bytesRead = stream.Read(responseData, 0, responseData.Length);
 
-                if (bytesRead == 0)
+                if (bytesRead <= 0)
                 {
-                    Console.WriteLine("Сервер закрыл соединение, не отправив данные.");
-                    return;
+                    Console.WriteLine($"[{commandName}] Сервер на {_ipAdress}:{port} закрыл соединение без ответа.");
+                    return null;
                 }
 
-                // Выводим только реально полученные байты
-                string test = string.Join(", ", responseData.Take(bytesRead).Select(b => "0x" + b.ToString("x2")));
-                Console.WriteLine($"Получено {bytesRead} байт: {test}");
-                //mySocket.Close();
+                var payload = responseData.Take(bytesRead).ToArray();
+                string payloadHex = string.Join(", ", payload.Select(b => "0x" + b.ToString("x2")));
+                Console.WriteLine($"[{commandName}] Получено {bytesRead} байт с {_ipAdress}:{port}: {payloadHex}");
 
+                if (!IsValidResponse(payload))
+                {
+                    Console.WriteLine($"[{commandName}] Ответ с {_ipAdress}:{port} не прошёл проверку контрольной суммы.");
+                    return null;
+                }
+
+                Console.WriteLine($"[{commandName}] Пакет с {_ipAdress}:{port} принят и статус подтверждён.");
+                return payload;
             }
             catch (SocketException ex)
             {
-                Console.WriteLine($"Ошибка подключения: {ex.Message}");
-            }           
-        }        
-    }
+                Console.WriteLine($"[{commandName}] Ошибка подключения к {_ipAdress}:{port}: {ex.Message}");
+                return null;
+            }
+        }
 
+        private static bool IsValidResponse(byte[] response)
+        {
+            if (response.Length < 2 || response[0] != 0x02)
+            {
+                return false;
+            }
+
+            int checksum = 0;
+            for (int i = 0; i < response.Length - 1; i++)
+            {
+                checksum += response[i];
+            }
+
+            return (checksum & 0xFF) == response[^1];
+        }
+    }
 }

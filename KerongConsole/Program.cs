@@ -1,42 +1,58 @@
 ﻿using KerongConsole;
 using KerongConsole.Common;
-using System;
 
-KerongService kerongService = new KerongService(ConstantKerong.IpAdress, ConstantKerong.Port);
+KerongService kerongService = new KerongService(
+    ConstantKerong.IpAdress,
+    ConstantKerong.Port,
+    ConstantKerong.Ports);
 
-Console.WriteLine("Введите номер ячейки для ее разблокировки");
+Console.WriteLine($"Подключаемся к {ConstantKerong.IpAdress} через порты: {string.Join(", ", ConstantKerong.Ports)}");
+Console.WriteLine("Введите номер ячейки для ее разблокировки или 'status' для проверки статуса.");
 
-while (true) // Бесконечный цикл
+while (true)
 {
-    Console.Write("> "); // Приглашение для ввода
-    string input = Console.ReadLine(); // Ожидание ввода
+    Console.Write("> ");
+    string? input = Console.ReadLine();
 
-    if (input?.ToLower() == "exit") // Проверка на выход
-        break;
-    if (input == "") // Проверка на выход
-        continue;
-
-    // Пытаемся преобразовать ввод в число
-    if (int.TryParse(input, out int number))
-    {        
-        Console.WriteLine($"Вы ввели ячейку : {input}");
-        // kerongService.Unlock(Convert.ToInt32(input));
-        // Thread.Sleep(3000); // Пауза перед повторной попыткой
-        while (true)
-        {
-            kerongService.Status();
-            Thread.Sleep(3000); // Пауза перед повторной попыткой
-        }
-           
-    }
-    else
+    if (input == null)
     {
-        Console.WriteLine("Ошибка: введите целое число или 'exit' для выхода.");
+        continue;
     }
-    // kerongService.Status();
+
+    if (input.ToLower() == "exit")
+    {
+        break;
+    }
+
+    if (input == "")
+    {
+        continue;
+    }
+
+    if (input.ToLower() == "status")
+    {
+        bool isOnline = kerongService.Status();
+        Console.WriteLine(isOnline ? "Статус подтверждён." : "Статус не подтверждён.");
+        continue;
+    }
+
+    if (int.TryParse(input, out int number))
+    {
+        Console.WriteLine($"Вы ввели ячейку: {number}");
+
+        if (kerongService.Unlock(number))
+        {
+            Console.WriteLine($"Ячейка {number} отправлена на разблокировку.");
+        }
+        else
+        {
+            Console.WriteLine($"Не удалось отправить команду разблокировки ячейки {number}.");
+        }
+
+        continue;
+    }
+
+    Console.WriteLine("Ошибка: введите целое число, 'status' или 'exit'.");
 }
-
-
-
 
 Console.ReadKey();

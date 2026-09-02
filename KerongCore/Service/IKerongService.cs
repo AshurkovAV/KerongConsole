@@ -2,7 +2,7 @@
 {
     public interface IKerongService
     {
-        void Status();
-        void Unlock(int cell);
+        bool Status();
+        bool Unlock(int cell);
     }
 }
